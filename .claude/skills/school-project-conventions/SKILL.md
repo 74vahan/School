@@ -21,9 +21,15 @@ frontend/                   # React (Vite) SPA — talks to the backend only via
 └── nginx.static.conf         # internal-only static server, port 8080
 
 ci-cd/                      # everything about building & shipping the app images
-├── .github/workflows/      # GitHub Actions pipelines (lint, test, build, deploy)
 └── docker/
     └── Dockerfile          # backend application image (multi-stage build)
+
+.github/workflows/          # GitHub Actions pipelines (lint, test, build, deploy) —
+                             # MUST live here at repo root, not under ci-cd/: GitHub
+                             # only discovers workflow files at exactly this path.
+                             # (We shipped with it under ci-cd/.github/workflows/ for
+                             # a while and the pipeline silently never ran — 0
+                             # workflows registered. Don't repeat that.)
 
 infra/                      # everything about the running environment
 ├── terraform/              # GCP infrastructure as code
@@ -134,7 +140,7 @@ Enforce the role check at the routing/middleware layer, not just in the view log
   - Client body size limits appropriate for the school site's use (assignment file uploads etc.) — don't leave nginx defaults if uploads are a feature.
 - Database credentials and any secrets reach containers via environment variables sourced from a `.env` file (git-ignored) or GitHub Secrets in CI — never hardcoded in `docker-compose.yml` or the Dockerfile.
 
-## CI/CD (ci-cd/.github/workflows, GitHub Actions)
+## CI/CD (.github/workflows, GitHub Actions)
 
 - **Pin every third-party action to a full commit SHA**, not a floating tag (`uses: actions/checkout@<sha> # v4.x.x`) — floating tags are a supply-chain risk since the action's maintainer can push new code under the same tag.
 - **Scope `GITHUB_TOKEN` permissions explicitly** per workflow (`permissions: contents: read` etc.) rather than relying on the repo-wide default, and grant write scopes only to the job that actually needs them (e.g. only the deploy job gets `id-token: write` for GCP auth).
