@@ -1,0 +1,39 @@
+{
+  "app.title": "Դպրոցի կայք",
+  "nav.courses": "Դասընթացներ",
+  "nav.grades": "Գնահատականներ",
+  "nav.schedule": "Դասացուցակ",
+  "nav.homework": "Տնային աշխատանք",
+
+  "auth.login": "Մուտք",
+  "auth.password": "Գաղտնաբառ",
+  "auth.register": "Գրանցում",
+  "auth.login.error.latinOnly": "Մուտքանունը պետք է պարունակի միայն լատինատառ, թվեր, կետ, գծիկ և ընդգծում",
+  "auth.error.invalidCredentials": "Սխալ մուտքանուն կամ գաղտնաբառ",
+  "auth.error.registerFailed": "Գրանցումը ձախողվեց։ Հնարավոր է՝ մուտքանունն արդեն զբաղված է",
+
+  "pending.message": "Առայժմ այստեղ ձեզ համար ոչինչ չկա։ Սպասեք, մինչև ուսուցիչը ձեզ ավելացնի դասարանում։",
+
+  "homework.empty": "Տնային աշխատանք դեռ չկա",
+  "homework.dueDate": "Ժամկետ",
+
+  "common.error.loadFailed": "Չհաջողվեց բեռնել տվյալները",
+
+  "admin.title": "Ուսուցչի վահանակ",
+  "admin.pendingGuests": "Նոր գրանցումներ",
+  "admin.noPendingGuests": "Նոր գրանցումներ չկան",
+  "admin.assignToClass": "Ավելացնել դասարանում",
+  "admin.createClass": "Ստեղծել դասարան",
+  "admin.classTitleRu": "Անվանում (ռուս.)",
+  "admin.classTitleEn": "Անվանում (անգլ.)",
+  "admin.classTitleHy": "Անվանում (հայ.)",
+  "admin.classRoster": "Աշակերտներ ըստ դասարանի",
+  "admin.noStudents": "Այս դասարանում դեռ աշակերտներ չկան",
+  "admin.createHomework": "Ավելացնել տնային աշխատանք",
+  "admin.selectClass": "Ընտրեք դասարան",
+  "admin.homeworkTitle": "Առաջադրանքի վերնագիր",
+  "admin.homeworkDescription": "Նկարագրություն",
+  "admin.error.assignFailed": "Չհաջողվեց ավելացնել դասարանում",
+  "admin.error.classCreateFailed": "Չհաջողվեց ստեղծել դասարան",
+  "admin.error.homeworkCreateFailed": "Չհաջողվեց ստեղծել տնային աշխատանք"
+}

@@ -1,0 +1,39 @@
+{
+  "app.title": "School Site",
+  "nav.courses": "Courses",
+  "nav.grades": "Grades",
+  "nav.schedule": "Schedule",
+  "nav.homework": "Homework",
+
+  "auth.login": "Login",
+  "auth.password": "Password",
+  "auth.register": "Register",
+  "auth.login.error.latinOnly": "Login must contain only Latin letters, digits, dot, hyphen and underscore",
+  "auth.error.invalidCredentials": "Invalid login or password",
+  "auth.error.registerFailed": "Registration failed. The login may already be taken",
+
+  "pending.message": "Nothing here for you yet. Wait for a teacher to add you to a class.",
+
+  "homework.empty": "No homework yet",
+  "homework.dueDate": "Due",
+
+  "common.error.loadFailed": "Failed to load data",
+
+  "admin.title": "Teacher admin",
+  "admin.pendingGuests": "New registrations",
+  "admin.noPendingGuests": "No new registrations",
+  "admin.assignToClass": "Add to class",
+  "admin.createClass": "Create class",
+  "admin.classTitleRu": "Title (RU)",
+  "admin.classTitleEn": "Title (EN)",
+  "admin.classTitleHy": "Title (HY)",
+  "admin.classRoster": "Students by class",
+  "admin.noStudents": "No students in this class yet",
+  "admin.createHomework": "Add homework",
+  "admin.selectClass": "Select a class",
+  "admin.homeworkTitle": "Homework title",
+  "admin.homeworkDescription": "Description",
+  "admin.error.assignFailed": "Failed to add to class",
+  "admin.error.classCreateFailed": "Failed to create class",
+  "admin.error.homeworkCreateFailed": "Failed to create homework"
+}

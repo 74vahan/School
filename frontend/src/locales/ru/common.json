@@ -1,0 +1,39 @@
+{
+  "app.title": "Школьный сайт",
+  "nav.courses": "Курсы",
+  "nav.grades": "Оценки",
+  "nav.schedule": "Расписание",
+  "nav.homework": "Домашние задания",
+
+  "auth.login": "Логин",
+  "auth.password": "Пароль",
+  "auth.register": "Регистрация",
+  "auth.login.error.latinOnly": "Логин должен содержать только латинские буквы, цифры, точку, дефис и подчёркивание",
+  "auth.error.invalidCredentials": "Неверный логин или пароль",
+  "auth.error.registerFailed": "Не удалось зарегистрироваться. Возможно, логин уже занят",
+
+  "pending.message": "Пока здесь ничего нет для вас. Дождитесь, пока учитель добавит вас в класс.",
+
+  "homework.empty": "Домашних заданий пока нет",
+  "homework.dueDate": "Срок сдачи",
+
+  "common.error.loadFailed": "Не удалось загрузить данные",
+
+  "admin.title": "Панель учителя",
+  "admin.pendingGuests": "Новые регистрации",
+  "admin.noPendingGuests": "Новых регистраций нет",
+  "admin.assignToClass": "Добавить в класс",
+  "admin.createClass": "Создать класс",
+  "admin.classTitleRu": "Название (рус.)",
+  "admin.classTitleEn": "Название (англ.)",
+  "admin.classTitleHy": "Название (арм.)",
+  "admin.classRoster": "Ученики по классам",
+  "admin.noStudents": "В этом классе пока нет учеников",
+  "admin.createHomework": "Добавить домашнее задание",
+  "admin.selectClass": "Выберите класс",
+  "admin.homeworkTitle": "Тема задания",
+  "admin.homeworkDescription": "Описание",
+  "admin.error.assignFailed": "Не удалось добавить в класс",
+  "admin.error.classCreateFailed": "Не удалось создать класс",
+  "admin.error.homeworkCreateFailed": "Не удалось создать домашнее задание"
+}

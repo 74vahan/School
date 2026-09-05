@@ -1,0 +1,16 @@
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+terraform/*.tfplan
+terraform/tfplan
+
+# secrets / env
+.env
+nginx/certs/
+
+# ssh keys accidentally dropped in this folder
+*.pem
+*_rsa
+*_rsa.pub

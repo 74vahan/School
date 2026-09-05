@@ -1,0 +1,66 @@
+services:
+  app:
+    image: ${APP_IMAGE}:${APP_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-ru}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+
+  frontend:
+    image: ${FRONTEND_IMAGE}:${FRONTEND_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    expose:
+      - "8080"
+    networks:
+      - internal
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - app
+      - frontend
+    networks:
+      - internal
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+    # Not exposed to the host or the outside world — only nginx faces the internet,
+    # only app talks to db, per school-project-conventions.
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  db_data:
