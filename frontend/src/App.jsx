@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import { AuthProvider } from './shared/api/AuthContext'
+import AppHeader from './shared/ui/AppHeader'
 import ProtectedRoute from './shared/ui/ProtectedRoute'
 
 import Login from './features/users/Login'
@@ -13,14 +13,10 @@ import TeacherAdmin from './features/admin/TeacherAdmin'
 // lands on /pending; student's main screen is homework; teacher's is the
 // admin page — per school-project-conventions.
 export default function App() {
-  const { t } = useTranslation()
-
   return (
     <AuthProvider>
       <BrowserRouter>
-        <header className="app-header">
-          <h1>{t('app.title')}</h1>
-        </header>
+        <AppHeader />
         <main className="app-main">
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />

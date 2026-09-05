@@ -5,4 +5,6 @@ import { api } from './client'
 export const auth = {
   register: (username, password) => api.post('/guest/users/register/', { username, password }),
   login: (username, password) => api.post('/guest/users/login/', { username, password }),
+  me: () => api.get('/me/'),
+  logout: () => api.post('/logout/', {}),
 }

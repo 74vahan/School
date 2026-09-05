@@ -1,50 +1,44 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { auth } from './auth'
 
 const AuthContext = createContext(null)
 
-const STORAGE_KEY = 'school-site.user'
-
-// The backend authenticates via session cookie, not a token — there's no
-// `/api/*/me` endpoint yet, so we just remember what login/register last
-// told us (username, role) to survive a page refresh. The cookie is what
-// actually gates access; this is only a client-side echo of it.
-function readStoredUser() {
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-}
-
+// The backend authenticates via session cookie; /api/me/ is the source of
+// truth. On mount we ask it who's logged in instead of trusting anything
+// client-side, so a stale or tampered client guess can never grant access —
+// `loading` covers that round trip so ProtectedRoute doesn't flash the
+// wrong screen while it's in flight.
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(readStoredUser)
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  function persist(data) {
-    setUser(data)
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-  }
+  useEffect(() => {
+    auth
+      .me()
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false))
+  }, [])
 
   async function register(username, password) {
     const data = await auth.register(username, password)
-    persist(data)
+    setUser(data)
     return data
   }
 
   async function login(username, password) {
     const data = await auth.login(username, password)
-    persist(data)
+    setUser(data)
     return data
   }
 
-  function logout() {
+  async function logout() {
+    await auth.logout().catch(() => {})
     setUser(null)
-    sessionStorage.removeItem(STORAGE_KEY)
   }
 
   return (
-    <AuthContext.Provider value={{ user, register, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

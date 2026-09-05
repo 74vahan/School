@@ -99,6 +99,15 @@ ul {
   color: var(--fg);
 }
 
+.app-nav span {
+  color: var(--muted);
+}
+
+.app-nav button {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+}
+
 .app-main {
   padding: 3rem 2rem;
 }

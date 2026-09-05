@@ -8,6 +8,7 @@ from apps.grades.urls import teacher_patterns as grades_teacher
 from apps.homework.urls import student_patterns as homework_student
 from apps.homework.urls import teacher_patterns as homework_teacher
 from apps.schedule.urls import urlpatterns as schedule_patterns
+from apps.users.me import LogoutView, MeView
 from apps.users.urls import guest_patterns as users_guest
 from apps.users.urls import student_patterns as users_student
 from apps.users.urls import teacher_patterns as users_teacher
@@ -17,6 +18,9 @@ from apps.users.urls import teacher_patterns as users_teacher
 # apps.common.middleware.RolePrefixAccessMiddleware, not here.
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Deliberately outside /api/{teacher,student}/ — see MeView's docstring.
+    path("api/me/", MeView.as_view(), name="me"),
+    path("api/logout/", LogoutView.as_view(), name="logout"),
     path("api/teacher/users/", include(users_teacher)),
     path("api/student/users/", include(users_student)),
     path("api/guest/users/", include(users_guest)),

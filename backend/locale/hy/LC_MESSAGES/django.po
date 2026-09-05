@@ -1,0 +1,16 @@
+# School site backend translations (hy).
+# See locale/ru/LC_MESSAGES/django.po for why this catalog exists.
+msgid ""
+msgstr ""
+"Project-Id-Version: school-site\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-05 00:00+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: hy\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: apps/common/validators.py:16
+msgid "Only Latin letters, digits, '_', '-' and '.' are allowed here."
+msgstr "Թույլատրվում են միայն լատինատառ, թվեր, «_», «-» և «.»։"

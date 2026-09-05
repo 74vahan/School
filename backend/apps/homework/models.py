@@ -10,7 +10,10 @@ class Homework(models.Model):
     description = models.TextField(blank=True)
     due_date = models.DateField(null=True, blank=True)
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="homework_created"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="homework_created",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

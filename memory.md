@@ -69,20 +69,37 @@
 - [x] `terraform init/plan/apply` выполнены реально — 6 ресурсов создано: VPC, subnet, 2 firewall (`allow-http-https`, `allow-ssh`), статический IP, VM `school-site-prod`
 - [x] **Результат: VM живая**, внешний IP `34.38.121.190`, зона `europe-west1-b`
 
+## Сделано (визуальный дизайн фронтенда)
+- [x] `frontend/src/index.css` — минимализм, только чёрный/белый/серый, шрифт Inter (Google Fonts в `index.html`), тонкие подчёркнутые инпуты, чёрные прямоугольные кнопки, карточки-секции
+- [x] Применено на всех реально роутящихся страницах: Login, Register, PendingPage (404), StudentHomework, TeacherAdmin, App-шапка
+- [x] Проверено вживую в Browser-панели через `.claude/launch.json` (`npm run dev -- --host`)
+
+## Сделано (репозиторий/git)
+- [x] Перенос backend-кода в `backend/` (симметрично с `frontend/`) — поправлены `ci-cd/docker/Dockerfile`-контекст (`context: ./backend`) и `working-directory: backend` в workflow
+- [x] `origin` добавлен (`git@github.com:74vahan/School.git`), запушено. SSH-ключ к GitHub уже был авторизован
+- [x] Найден и вычищен из истории (через `commit --amend`, до первого push) секретный артефакт `infra/terraform/tfplan` — расширен `infra/.gitignore` (`terraform/tfplan`)
+- [x] `.gitattributes` (`* text=auto eol=lf`) — убирает предупреждения CRLF/LF на Windows (`core.autocrlf=true` у пользователя)
+
+## Сделано (backlog-пункты этой сессии)
+- [x] `/api/me/` (`apps/users/me.py::MeView`) — роль-агностичный "кто я", вне ролевых префиксов, не блокируется middleware. `/api/logout/` (`LogoutView`) добавлен туда же
+- [x] Фронт: `AuthContext` теперь на маунте реально спрашивает `/api/me/` (source of truth — сервер), а не слепо доверяет `sessionStorage`; `ProtectedRoute` ждёт `loading` перед редиректом, чтобы не мигать неверным экраном
+- [x] `AppHeader.jsx` — юзернейм + кнопка "Выйти" в шапке, когда залогинен; ключ `auth.logout` добавлен в ru/en/hy
+- [x] `ci-cd/.github/workflows/deploy.yml`: добавлен job-шаг сборки+пуша `frontend`-образа (Artifact Registry `.../school-site/frontend`), деплой обновляет оба тега (`APP_IMAGE_TAG`, `FRONTEND_IMAGE_TAG`) и делает `docker compose pull app frontend`
+- [x] **Найден и исправлен реальный баг в CI**: job `lint-test` не задавал `DJANGO_SECRET_KEY`/`DATABASE_URL` — `pytest` упал бы ещё на импорте `config/settings.py`, до первого теста. Добавлены env-переменные (sqlite для скорости)
+- [x] Тесты: `backend/tests/test_role_flow.py` — 9 тестов (register→guest, guest 403 на teacher/student роуты, teacher assign→student, повторный assign→404, student видит только своё ДЗ, `/api/me/`, `/api/logout/`). Прогнаны реально в venv — все 9 зелёные
+- [x] `backend/locale/{ru,hy}/LC_MESSAGES/django.po` заполнены переводом единственной переводимой строки в бэкенде (`apps/common/validators.py`) — написаны вручную, т.к. GNU gettext (`msguniq`/`msgfmt`) не установлен в этой Windows-среде
+- [x] `ci-cd/docker/Dockerfile`: добавлен `apt-get install gettext` + `RUN ... compilemessages` в финальный стейдж (с dummy `DJANGO_SECRET_KEY`/`DATABASE_URL`, т.к. `manage.py` всегда грузит settings.py) — **не проверено сборкой** (Docker Desktop daemon не запущен в этой сессии), проверить на следующем реальном билде/в CI
+
 ## Дальше (backlog) — до реально работающего сайта на этом IP ещё не хватает
 - [ ] На VM (COS-образ) нужно проверить/поставить `docker compose` плагин и разложить `infra/` (docker-compose.yml, nginx/, .env) в `/opt/school-site/infra` — сейчас там ничего нет, `deploy.yml`'s `docker compose pull && up -d` упадёт без этого. SSH на VM заблокирован авто-режим-классификатором в этой сессии — это должен сделать пользователь (или отдельная сессия с явным разрешением на SSH)
 - [ ] Образы `school-site-backend`/`school-site-frontend` ещё не собраны и не запушены в Artifact Registry — нужен репозиторий `school-site` в Artifact Registry (сейчас его нет)
 - [ ] WIF (Workload Identity Federation) pool/provider и deploy service account в GCP — ещё не настроены; без них `ci-cd/.github/workflows/deploy.yml` не сможет аутентифицироваться
 - [ ] GitHub Secrets (`GCP_PROJECT_ID=vibecoding-499316`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA_EMAIL`, `GCP_DEPLOY_SSH_PRIVATE_KEY` = содержимое `~/.ssh/school_site_deploy`, `GCP_DEPLOY_SSH_PUBLIC_KEY`) — не добавлены
-- [ ] `ci-cd/docker/Dockerfile` собирается из корня репозитория (`context: .`), но бэкенд перенесён в `backend/` параллельным процессом — Dockerfile/workflow нужно свериup с новым расположением, иначе сборка образа сломается
+- [ ] Проверить сборку `ci-cd/docker/Dockerfile` реально (Docker daemon был недоступен в этой сессии) — особенно новый шаг `compilemessages`
 - [ ] TLS-сертификаты для `infra/nginx/certs/` всё ещё не сгенерированы
-- [ ] `ci-cd/.github/workflows`: добавить шаг сборки и пуша `frontend`-образа (сейчас пайплайн знает только про backend-образ)
 - [ ] Реальная аутентификация в `apps/users/guest.py` — сейчас голый `django.contrib.auth`, сессии; нет rate-limit/CSRF-стратегии для API (`csrf_exempt`, это временно и небезопасно для прода)
-- [ ] Нет эндпоинта `/api/*/me` — роль на фронте берётся из ответа login/register и живёт в `sessionStorage`; после ручного обновления страницы без relogin данные не протухают, но и не проверяются повторно сервером до следующего запроса к защищённому эндпоинту
-- [ ] npm install/build фронтенда не прогонялся (нет сети в этой сессии) — стоит собрать перед первым деплоем и проверить в браузере
-- [ ] Наполнить `locale/ru/LC_MESSAGES/django.po` и `locale/hy/...` реальными переводами (сейчас только пустые `.gitkeep`-каталоги)
-- [ ] Написать тесты (pytest-django настроен, но тестов пока нет — особенно стоит покрыть guest→student assign и ролевые 403)
-- [ ] `infra/nginx/certs/`: сгенерировать/подложить TLS-сертификаты (сейчас nginx.conf их ждёт, но каталог пуст и в .gitignore)
+- [ ] Наполнить `locale/en/...` не нужно (по дизайну — msgid и есть английский), но если появятся новые переводимые строки на бэке, `ru`/`hy` `.po` надо будет дополнять вручную, пока в системе нет gettext-тулчейна для `makemessages`/`compilemessages` локально
+- [ ] Написать больше тестов: courses/grades напрямую (сейчас покрыт только сценарий через homework), frontend-тесты (Vitest/RTL ещё не настроены)
 - [ ] Настроить в GCP: WIF pool/provider, deploy service account с ролями на Artifact Registry/Compute/Storage(tfstate), Artifact Registry репозиторий `school-site`
 - [ ] Добавить в GitHub Secrets: `GCP_PROJECT_ID`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA_EMAIL`, `GCP_DEPLOY_SSH_PRIVATE_KEY`, `GCP_DEPLOY_SSH_PUBLIC_KEY` — без них workflow не запустится
 

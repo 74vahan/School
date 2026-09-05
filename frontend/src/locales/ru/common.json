@@ -8,6 +8,7 @@
   "auth.login": "Логин",
   "auth.password": "Пароль",
   "auth.register": "Регистрация",
+  "auth.logout": "Выйти",
   "auth.login.error.latinOnly": "Логин должен содержать только латинские буквы, цифры, точку, дефис и подчёркивание",
   "auth.error.invalidCredentials": "Неверный логин или пароль",
   "auth.error.registerFailed": "Не удалось зарегистрироваться. Возможно, логин уже занят",

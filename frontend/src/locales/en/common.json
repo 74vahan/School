@@ -8,6 +8,7 @@
   "auth.login": "Login",
   "auth.password": "Password",
   "auth.register": "Register",
+  "auth.logout": "Log out",
   "auth.login.error.latinOnly": "Login must contain only Latin letters, digits, dot, hyphen and underscore",
   "auth.error.invalidCredentials": "Invalid login or password",
   "auth.error.registerFailed": "Registration failed. The login may already be taken",

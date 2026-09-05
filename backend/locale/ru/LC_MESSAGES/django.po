@@ -1,0 +1,18 @@
+# School site backend translations (ru).
+# LANGUAGE_CODE default — see config/settings.py for why this catalog exists
+# even though ru is the default: msgids are written in English in the code,
+# so ru needs its own catalog while en does not (msgid == English string).
+msgid ""
+msgstr ""
+"Project-Id-Version: school-site\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-05 00:00+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ru\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+
+#: apps/common/validators.py:16
+msgid "Only Latin letters, digits, '_', '-' and '.' are allowed here."
+msgstr "Допускаются только латинские буквы, цифры, «_», «-» и «.»."

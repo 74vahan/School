@@ -8,6 +8,7 @@
   "auth.login": "Մուտք",
   "auth.password": "Գաղտնաբառ",
   "auth.register": "Գրանցում",
+  "auth.logout": "Ելք",
   "auth.login.error.latinOnly": "Մուտքանունը պետք է պարունակի միայն լատինատառ, թվեր, կետ, գծիկ և ընդգծում",
   "auth.error.invalidCredentials": "Սխալ մուտքանուն կամ գաղտնաբառ",
   "auth.error.registerFailed": "Գրանցումը ձախողվեց։ Հնարավոր է՝ մուտքանունն արդեն զբաղված է",

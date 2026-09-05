@@ -10,6 +10,7 @@ env:
   GCP_REGION: europe-west1
   ARTIFACT_REPO: school-site
   IMAGE_NAME: europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/school-site/app
+  FRONTEND_IMAGE_NAME: europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/school-site/frontend
 
 permissions:
   contents: read
@@ -22,6 +23,10 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      DJANGO_SECRET_KEY: ci-test-secret-key
+      DJANGO_ALLOWED_HOSTS: localhost
+      DATABASE_URL: sqlite:///ci-test.sqlite3
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
@@ -64,6 +69,14 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
             ${{ env.IMAGE_NAME }}:latest
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: ./frontend
+          file: frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE_NAME }}:${{ steps.tag.outputs.value }}
+            ${{ env.FRONTEND_IMAGE_NAME }}:latest
 
   terraform-plan:
     needs: lint-test
@@ -135,5 +148,6 @@ jobs:
           command: |
             cd /opt/school-site/infra && \
             sed -i "s/^APP_IMAGE_TAG=.*/APP_IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}/" .env && \
-            docker compose pull app && \
+            sed -i "s/^FRONTEND_IMAGE_TAG=.*/FRONTEND_IMAGE_TAG=${{ needs.build-and-push.outputs.image_tag }}/" .env && \
+            docker compose pull app frontend && \
             docker compose up -d --remove-orphans
