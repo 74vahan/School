@@ -1,0 +1,75 @@
+#!/bin/bash
+# Runs once on first boot (GCE re-runs it on every boot, but everything here
+# is idempotent). Provisions the box so the CI/CD deploy step
+# (ci-cd/.github/workflows/deploy.yml) can just `docker compose pull && up -d`
+# over SSH — Terraform's job is to make that command succeed, not to run the
+# app itself (no real images/tags exist until the first CI run pushes them).
+set -euxo pipefail
+
+apt-get update
+apt-get install -y ca-certificates curl gnupg openssl
+
+# Docker CE + compose plugin from the official repo (Debian's own docker.io
+# package doesn't ship the `docker compose` plugin the rest of this project
+# assumes).
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+  > /etc/apt/sources.list.d/docker.list
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+useradd -m -s /bin/bash app || true
+usermod -aG docker app
+
+# docker-credential-gcr lets `docker compose pull` authenticate to Artifact
+# Registry using this VM's own service account (no static key baked in),
+# refreshing the token from the metadata server on every pull.
+curl -fsSL https://github.com/GoogleCloudPlatform/docker-credential-gcr/releases/download/v2.1.22/docker-credential-gcr_linux_amd64-2.1.22.tar.gz \
+  | tar xz -C /usr/local/bin docker-credential-gcr
+chmod +x /usr/local/bin/docker-credential-gcr
+sudo -u app -H /usr/local/bin/docker-credential-gcr configure-docker --registries=${region}-docker.pkg.dev
+
+mkdir -p /opt/school-site/infra/nginx/certs /opt/school-site/infra/db
+
+cat > /opt/school-site/infra/docker-compose.yml <<'COMPOSE_EOF'
+${compose_content}
+COMPOSE_EOF
+
+cat > /opt/school-site/infra/nginx/nginx.conf <<'NGINX_EOF'
+${nginx_content}
+NGINX_EOF
+
+cat > /opt/school-site/infra/db/init.sql <<'SQL_EOF'
+${init_sql_content}
+SQL_EOF
+
+# Self-signed cert so nginx has something to bind to immediately — replace
+# these two files with a real certificate (Let's Encrypt) once a domain
+# points at ${static_ip}; browsers will warn until then.
+if [ ! -f /opt/school-site/infra/nginx/certs/fullchain.pem ]; then
+  openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /opt/school-site/infra/nginx/certs/privkey.pem \
+    -out /opt/school-site/infra/nginx/certs/fullchain.pem \
+    -subj "/CN=${static_ip}"
+fi
+
+if [ ! -f /opt/school-site/infra/.env ]; then
+  cat > /opt/school-site/infra/.env <<'ENV_EOF'
+APP_IMAGE=${region}-docker.pkg.dev/${project_id}/school-site/app
+APP_IMAGE_TAG=latest
+FRONTEND_IMAGE=${region}-docker.pkg.dev/${project_id}/school-site/frontend
+FRONTEND_IMAGE_TAG=latest
+DJANGO_SECRET_KEY=${django_secret}
+DJANGO_ALLOWED_HOSTS=${static_ip}
+DEFAULT_LANGUAGE=ru
+DB_USER=school_site
+DB_PASSWORD=${db_password}
+DB_NAME=school_site
+ENV_EOF
+fi
+
+chown -R app:app /opt/school-site
+chmod 600 /opt/school-site/infra/.env

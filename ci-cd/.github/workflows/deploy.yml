@@ -2,9 +2,9 @@ name: Lint, Test, Build, Deploy
 
 on:
   pull_request:
-    branches: [main]
+    branches: [master]
   push:
-    branches: [main]
+    branches: [master]
 
 env:
   GCP_REGION: europe-west1
@@ -42,7 +42,7 @@ jobs:
 
   build-and-push:
     needs: lint-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -102,10 +102,15 @@ jobs:
         env:
           TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_ssh_pub_key_path: ${{ github.workspace }}/infra/terraform/deploy_key.pub
+          # Google's IAP TCP-forwarding range — how this same ssh-compute step
+          # below reaches the VM. Must stay set on every apply: the default is
+          # `[]`, which would tear down the allow-ssh firewall rule and lock
+          # the deploy job out.
+          TF_VAR_allowed_ssh_ranges: '["35.235.240.0/20"]'
 
   terraform-apply:
     needs: build-and-push
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -127,6 +132,11 @@ jobs:
         env:
           TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
           TF_VAR_ssh_pub_key_path: ${{ github.workspace }}/infra/terraform/deploy_key.pub
+          # Google's IAP TCP-forwarding range — how this same ssh-compute step
+          # below reaches the VM. Must stay set on every apply: the default is
+          # `[]`, which would tear down the allow-ssh firewall rule and lock
+          # the deploy job out.
+          TF_VAR_allowed_ssh_ranges: '["35.235.240.0/20"]'
 
   deploy:
     needs: [terraform-apply, build-and-push]
@@ -144,6 +154,7 @@ jobs:
         with:
           instance_name: school-site-prod
           zone: europe-west1-b
+          user: app
           ssh_private_key: ${{ secrets.GCP_DEPLOY_SSH_PRIVATE_KEY }}
           command: |
             cd /opt/school-site/infra && \

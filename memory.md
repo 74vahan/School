@@ -90,18 +90,30 @@
 - [x] `backend/locale/{ru,hy}/LC_MESSAGES/django.po` заполнены переводом единственной переводимой строки в бэкенде (`apps/common/validators.py`) — написаны вручную, т.к. GNU gettext (`msguniq`/`msgfmt`) не установлен в этой Windows-среде
 - [x] `ci-cd/docker/Dockerfile`: добавлен `apt-get install gettext` + `RUN ... compilemessages` в финальный стейдж (с dummy `DJANGO_SECRET_KEY`/`DATABASE_URL`, т.к. `manage.py` всегда грузит settings.py) — **не проверено сборкой** (Docker Desktop daemon не запущен в этой сессии), проверить на следующем реальном билде/в CI
 
-## Дальше (backlog) — до реально работающего сайта на этом IP ещё не хватает
-- [ ] На VM (COS-образ) нужно проверить/поставить `docker compose` плагин и разложить `infra/` (docker-compose.yml, nginx/, .env) в `/opt/school-site/infra` — сейчас там ничего нет, `deploy.yml`'s `docker compose pull && up -d` упадёт без этого. SSH на VM заблокирован авто-режим-классификатором в этой сессии — это должен сделать пользователь (или отдельная сессия с явным разрешением на SSH)
-- [ ] Образы `school-site-backend`/`school-site-frontend` ещё не собраны и не запушены в Artifact Registry — нужен репозиторий `school-site` в Artifact Registry (сейчас его нет)
-- [ ] WIF (Workload Identity Federation) pool/provider и deploy service account в GCP — ещё не настроены; без них `ci-cd/.github/workflows/deploy.yml` не сможет аутентифицироваться
-- [ ] GitHub Secrets (`GCP_PROJECT_ID=vibecoding-499316`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA_EMAIL`, `GCP_DEPLOY_SSH_PRIVATE_KEY` = содержимое `~/.ssh/school_site_deploy`, `GCP_DEPLOY_SSH_PUBLIC_KEY`) — не добавлены
-- [ ] Проверить сборку `ci-cd/docker/Dockerfile` реально (Docker daemon был недоступен в этой сессии) — особенно новый шаг `compilemessages`
-- [ ] TLS-сертификаты для `infra/nginx/certs/` всё ещё не сгенерированы
+## Сделано (замыкаем "после CI/CD попал в docker")
+- [x] Artifact Registry репозиторий `school-site` создан (europe-west1, docker format) — API `artifactregistry.googleapis.com`/`iamcredentials.googleapis.com` включены
+- [x] WIF: pool `github-pool` + OIDC-провайдер `github-provider`, `attribute-condition` заперт на `assertion.repository=='74vahan/School'` (т.е. только этот репозиторий может имперсонировать SA)
+- [x] Service account `school-site-deployer@vibecoding-499316.iam.gserviceaccount.com` — `roles/iam.workloadIdentityUser` (impersonation с GitHub OIDC) + `artifactregistry.writer`, `compute.instanceAdmin.v1`, `iam.serviceAccountUser`, `storage.objectAdmin`, `compute.viewer` на проекте
+- [x] `roles/artifactregistry.reader` выдан **VM'шному** default compute SA (`25861747023-compute@...`) — отдельное IAM-изменение, отдельно подтверждено пользователем — нужно, чтобы `docker-credential-gcr` на самой VM мог тянуть образы без статичного ключа
+- [x] `gh` CLI установлен (winget) и авторизован (device-flow, пользователь подтвердил код в браузере) — добавлены все 5 GitHub Secrets в `74vahan/School`: `GCP_PROJECT_ID`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA_EMAIL`, `GCP_DEPLOY_SSH_PUBLIC_KEY`, `GCP_DEPLOY_SSH_PRIVATE_KEY`
+- [x] **Найден и исправлен реальный баг**: `deploy.yml`'s `ssh-compute` шаг не указывал `user:` — без него action пытается зайти под именем runner'а, которого на VM не существует (VM знает только пользователя `app` из ssh-keys метадаты). Добавлено `user: app`
+- [x] Terraform полностью переписан для bootstrap VM (`infra/terraform/templates/startup.sh.tftpl` + `main.tf`):
+  - образ сменён `cos-cloud/cos-stable` → `debian-cloud/debian-12` (на COS штатно нет `docker compose` плагина)
+  - startup-script ставит Docker CE + `docker-compose-plugin` из официального репозитория, создаёт пользователя `app`, добавляет в группу `docker`
+  - `docker-credential-gcr` установлен и настроен на `app` — образы тянутся через service account VM (метадата-сервер), без статичного ключа
+  - `infra/docker-compose.yml`, `infra/nginx/nginx.conf`, `infra/db/init.sql` embed'ятся в startup-script через `file()` (единый источник правды — сам репозиторий, а не ручной дубль на VM)
+  - `.env` генерируется на VM с реальными `DJANGO_SECRET_KEY`/`DB_PASSWORD` (через `random_password` в state, не в git) и правильными `APP_IMAGE`/`FRONTEND_IMAGE` (Artifact Registry пути)
+  - self-signed TLS-сертификат генерируется на лету (`openssl req -x509`), чтобы nginx мог стартовать сразу — заменить на Let's Encrypt, когда появится домен
+- [x] `terraform apply` реально выполнен (пересоздание VM подтверждено пользователем после блокировки классификатором) — новая VM на том же статическом IP `34.38.121.190`
+- [x] Startup-script на новой VM прошёл полностью, `exit code 0` (проверено через serial console log): Docker CE + compose plugin установлены, `docker-credential-gcr` настроен для `app`, `/opt/school-site/infra/{docker-compose.yml,nginx/nginx.conf,nginx/certs/*.pem,db/init.sql,.env}` разложены, `chown app:app` — VM готова принять `docker compose pull && up -d` от CI/CD
+
+## Дальше (backlog)
+- [ ] Собственно **запустить workflow** — нужен реальный push/PR в `74vahan/School` на `main`, чтобы `lint-test → build-and-push → terraform-plan/apply → deploy` реально прогнался целиком в GitHub Actions (мы всё подготовили, но CI ещё ни разу не запускался)
+- [ ] Проверить сборку `ci-cd/docker/Dockerfile` реально (Docker daemon был недоступен в этой сессии) — особенно шаг `compilemessages`
+- [ ] TLS: self-signed сертификат — временное решение; настроить домен + Let's Encrypt (certbot), когда появится домен вместо голого IP
 - [ ] Реальная аутентификация в `apps/users/guest.py` — сейчас голый `django.contrib.auth`, сессии; нет rate-limit/CSRF-стратегии для API (`csrf_exempt`, это временно и небезопасно для прода)
-- [ ] Наполнить `locale/en/...` не нужно (по дизайну — msgid и есть английский), но если появятся новые переводимые строки на бэке, `ru`/`hy` `.po` надо будет дополнять вручную, пока в системе нет gettext-тулчейна для `makemessages`/`compilemessages` локально
 - [ ] Написать больше тестов: courses/grades напрямую (сейчас покрыт только сценарий через homework), frontend-тесты (Vitest/RTL ещё не настроены)
-- [ ] Настроить в GCP: WIF pool/provider, deploy service account с ролями на Artifact Registry/Compute/Storage(tfstate), Artifact Registry репозиторий `school-site`
-- [ ] Добавить в GitHub Secrets: `GCP_PROJECT_ID`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA_EMAIL`, `GCP_DEPLOY_SSH_PRIVATE_KEY`, `GCP_DEPLOY_SSH_PUBLIC_KEY` — без них workflow не запустится
+- [ ] `terraform.tfvars` — локальный, git-ignored; если репозиторий/сессию потеряем, значения (`project_id`, `ssh_pub_key_path`, `allowed_ssh_ranges`) надо будет восстановить вручную (они есть в этом файле)
 
 ## Открытые вопросы
 - (пока нет)

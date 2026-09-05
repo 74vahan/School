@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 5.30"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 }
 
@@ -66,8 +70,22 @@ resource "google_compute_address" "app_static_ip" {
   region = var.region
 }
 
-# Runs docker compose (app + nginx + db) on boot via cloud-init.
-# The compose file and its .env are pulled from the CI/CD deploy step, not baked into the image.
+# Generated once and persisted in state — not in git, per school-project-conventions
+# (secrets never in .tf files). Rotating these means tainting the resource.
+resource "random_password" "django_secret" {
+  length  = 40
+  special = false
+}
+
+resource "random_password" "db_password" {
+  length  = 32
+  special = false
+}
+
+# Provisions Docker + compose plugin, Artifact Registry auth, and the
+# infra/ files (docker-compose.yml, nginx.conf, init.sql, a generated .env)
+# so the CI/CD deploy step can `docker compose pull && up -d` over SSH and
+# have it actually work — see templates/startup.sh.tftpl for what runs.
 resource "google_compute_instance" "app" {
   name         = "school-site-${var.environment}"
   machine_type = var.machine_type
@@ -76,7 +94,7 @@ resource "google_compute_instance" "app" {
 
   boot_disk {
     initialize_params {
-      image = "cos-cloud/cos-stable"
+      image = "debian-cloud/debian-12"
       size  = var.app_disk_size_gb
     }
   }
@@ -89,6 +107,16 @@ resource "google_compute_instance" "app" {
   }
 
   metadata = {
-    ssh-keys = "app:${file(var.ssh_pub_key_path)}"
+    ssh-keys        = "app:${file(var.ssh_pub_key_path)}"
+    startup-script = templatefile("${path.module}/templates/startup.sh.tftpl", {
+      region           = var.region
+      project_id       = var.project_id
+      static_ip        = google_compute_address.app_static_ip.address
+      django_secret    = random_password.django_secret.result
+      db_password      = random_password.db_password.result
+      compose_content  = file("${path.module}/../docker-compose.yml")
+      nginx_content    = file("${path.module}/../nginx/nginx.conf")
+      init_sql_content = file("${path.module}/../db/init.sql")
+    })
   }
 }
